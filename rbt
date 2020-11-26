@@ -1,0 +1,978 @@
+#include "constructors.cpp"
+
+template <typename T>
+struct Node
+{
+    Node *l = 0;
+    Node *r = 0;
+    Node *p = 0;
+    T data;
+    T *ptr = &data;
+    char color = 'b';
+
+    Node()
+    {
+        //T *p = &this->data;
+        this->ptr = new T;
+        if (CONSTRUCTORS)
+        {
+
+            printf("EmptyConstructed node (%d)\n", this->data);
+        }
+    }
+    Node(Node &n)
+    {
+        //T *p = &this->data;
+        this->ptr = new T;
+        this->data = n.data;
+        this->l = n.l;
+        this->r = n.r;
+        this->p = n.p;
+        this->color = n.color;
+        if (CONSTRUCTORS)
+        {
+            printf("CopyConstructed node (%d)\n", this->data);
+        }
+    }
+    Node(T t)
+    {
+        //T *p = &this->data;
+        this->ptr = new T;
+        this->data = t;
+        if (CONSTRUCTORS)
+        {
+            printf("Constructed node (%d)\n", this->data);
+        }
+    }
+
+    ~Node()
+    {
+        if (CONSTRUCTORS)
+        {
+            cout << p;
+            printf("Deleted node (%d)\n", this->data);
+        }
+        delete this->ptr;
+        if (CONSTRUCTORS)
+        {
+            printf("EndDel node (%d)\n", this->data);
+        }
+    }
+};
+
+template <typename T>
+struct Tree
+{
+
+    Node<T> *root = 0;
+    Node<T> *now = this->root;
+    int size = 0;
+    int levels = 0;
+
+    Tree()
+    {
+        if (TREE_CONSTRUCTORS)
+        {
+            printf("Constructed tree (%d)\n", this->size);
+        }
+    }
+    Tree(Tree &tr)
+    {
+        this->root = tr.root;
+        this->size = tr.size;
+        this->now = tr.now;
+    }
+
+    void GoL()
+    {
+        this->now = this->now->l;
+    }
+
+    void GoR()
+    {
+        this->now = this->now->r;
+    }
+
+    void GoP()
+    {
+        this->now = this->now->p;
+    }
+
+    void PushTree(Node<T> &n)
+    {
+        if (this->root == 0)
+        {
+
+            this->root = &n;
+            this->now = this->root;
+            this->now->l = 0;
+            this->now->r = 0;
+            this->now->p = 0;
+            this->size++;
+            printf("root pushed, size == %d\n", this->size);
+        }
+        else
+        {
+            printf("pushing node %d \n", n.data);
+            this->now = this->root;
+            this->Paste(n, this->root->p);
+            this->ShowTree(this->root);
+            this->Balance(this->now);
+        }
+    }
+
+    void TLevel()
+    {
+        this->levels = 0;
+        if (this->root != 0)
+        {
+            this->TreeLevel(this->root, 1);
+        }
+    }
+
+    Node<T> *FindNode(T x, Node<T> *n)
+    {
+        if (n->data == x)
+        {
+            return n;
+        }
+        else
+        {
+            if (n->l != 0)
+            {
+                this->FindNode(x, n->l);
+            }
+            if (n->r != 0)
+            {
+                this->FindNode(x, n->r);
+            }
+        }
+    }
+
+    void PrevNull(Node<T> *n)
+    {
+        if (n->p != 0)
+        {
+            if (n->p->r == n) //у предыдущего зануляем
+            {
+                n->p->r = 0;
+            }
+            else
+            {
+                n->p->l = 0;
+            }
+            n->p = 0; //на предыдущий зануляем
+        }else{
+            #ifdef DELETING_BALANCE
+            printf("Корень удаляем значит\n");
+            #endif
+        }
+    }
+
+    Node<T> * LeftFall(Node<T> *n){          //проваливаемся в левое поддерево
+        n = n->l;
+        while (n->r != 0)
+        {
+            n = n->r;
+        }
+        return n;
+    }
+    Node<T> * RightFall(Node<T> *n){         //проваливаемся в правое поддерево
+        n = n->r;
+        while (n->l != 0)
+        {
+            n = n->l;
+        }
+        return n;
+    }
+
+    void RedBlack2(Node<T> * n, Node<T> * del){
+        if(n->l != 0){
+            n = this->LeftFall(n);
+        }else{
+            n = this->RightFall(n);
+        }
+        del->data = n->data;
+        this->PopTree(n);
+    }
+
+    /* void Black2(Node<T> * n, Node<T> * del){
+        if(n->l != 0){
+            n = this->LeftFall(n);
+        }else{
+            n = this->RightFall(n);
+        }
+        del->data = n->data;
+        this->PopTree(n);
+    } */
+
+    void RightRot(Node<T> * dad, Node<T> * son){         //son слева от dad
+         if(dad->p->l == dad){
+                        dad->p->l = son;
+                    }else{
+                        dad->p->r = son;
+                    }
+                    son->p = dad->p;                
+                   dad->p = son;
+                   dad->l = son->r;
+                   son->r->p = dad;
+                   son->r = dad;
+                   if(this->root == dad){
+                       this->root = son;
+                   }
+    }
+
+    void LeftRot(Node<T> * dad, Node<T> * son){         //son справа от dad
+         if(dad->p->l == dad){
+                        dad->p->l = son;
+                    }else{
+                        dad->p->r = son;
+                    }
+                    son->p = dad->p;                
+                   dad->p = son;
+                   dad->r = son->l;
+                   son->l->p = dad;
+                   son->l = dad;
+                   if(this->root == dad){
+                       this->root = son;
+                   }
+    }
+
+    void Black1(Node<T> * n, Node<T> * del){
+        if(n->l != 0){
+            n = n->l;
+        }else{
+            n = n->r;
+        }
+        del->data = n->data;
+        this->PrevNull(n);
+    }
+
+    void Red0(Node<T> * n, Node<T> * del){
+        this->PrevNull(n);
+    }
+    void Black0(Node<T> * n, Node<T> * del){
+        Node<T> *dad = n->p, *son, *vnuk;
+        this->PrevNull(n);
+
+if(dad->r == 0){        //левый случай
+son = dad->l;
+vnuk = son->l;
+
+if(dad->color == 'r'){ //родитель красный
+if (vnuk->color == 'r') //р- кр, с- ч, лвнук- кр.
+{
+    this->RB2(dad, son, vnuk);
+}
+else                    //р- кр, с- ч, лвнук- ч.
+{
+    this->RB1(dad, son, vnuk);
+}
+
+////////////////////////////////////black
+}else{                 //родитель чёрный
+if(son->color == 'r')   //сын - кр
+
+
+}else{                  //сын - ч
+
+}
+
+
+
+
+
+
+}else{                  //правый случай
+son = dad->r;
+vnuk = son->r;
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        /* if (dad->color == 'r')      //тогда параллельный сын - чёрный (no: r-r)
+        {
+            if (dad->l != 0)
+            {
+                son = dad->l;       //параллельный сын слева
+                if((son->l->color == 'b')&&(son->r->color == 'b')){   //если у сына есть только чёрные предки
+                    son->color = 'r';
+                    dad->color = 'b';
+                }else{                              //если у сына есть красные предки
+                   this->RightRot(dad, son);             //повернули
+                }
+            }else                   //параллельный сын справа
+            {
+                son = dad->r;
+                if((son->l->color == 'b')&&(son->r->color == 'b')){   //если у сына есть только чёрные предки
+                    son->color = 'r';
+                    dad->color = 'b';
+                }else{                                              //если у сына есть красные предки
+                   this->LeftRot(dad, son); //повернули
+                   
+                }
+            }
+            
+            
+        }else{                      //чёрный родитель
+            if(dad->l != 0){    //если слева сын
+                son = dad->l;
+                
+                if((son->color == 'r')&&(son->r->l->color == 'b')&&(son->r->r->color == 'b')){
+                    //внуки - чёрные
+                    son->color = 'b';
+                    son->r->color = 'r';
+                    this->RightRot(dad, son); //поворот вправо
+                    
+
+                }                
+
+
+
+
+            }else{              //если справа сын
+                son = dad->r;
+                if((son->color == 'r')&&(son->l->l->color == 'b')&&(son->l->r->color == 'b')){
+                    son->color = 'b';
+                    son->l->color = 'r';
+                   this->LeftRot(dad, son);         //поворот влево
+                    
+                }  
+            }
+        }
+         */
+
+    }
+
+
+
+
+        Node<T> PopTree(Node<T> * n)//типо удoляем del, но по факту удоляем n
+        {
+            Node<T> res = *n;
+            Node<T> *del = n; //запоминаем указатель удоляемого элемента
+
+            if((n->l != 0)&&(n->r != 0)){    //если 2 сына    //К2 или Ч2
+                    this->RedBlack2(n, del);
+            }else{
+                if((n->l != 0)||(n->r != 0)){ //если 1 сын  (Ч1)
+                    this->Black1(n, del);
+                }else{                         //если 0 сыновей
+                    if(n->color == 'r'){   //К0
+                        this->Red0(n, del);
+                }else{                     //Ч0
+                    this->Black0(n, del);
+                }
+                }
+            }
+
+
+            return res;
+
+/* 
+            if (n->l != 0)
+            {                                   //если ходим налево
+                n = n->l;
+                while (n->r != 0)
+                {
+                    n = n->r;
+                }
+
+                del->data = n->data; //меняем наш элемент с самым правым из левого поддерева
+
+                this->DelInSub(n);   // (K2) (Ч1) (Ч2)
+            }
+            else                        //если надо идти в на Право
+            {
+                if (n->r != 0)
+                { //если слева никого, а справа есть кто-то
+                    while (n->l != 0)
+                    {
+                        n = n->l;
+                    }
+
+                    del->data = n->data; //меняем наш элемент с самым левым из правого поддерева
+                    this->DelInSub(n); // (K2) (Ч1) (Ч2)
+                }
+                else
+                { //если детей нет
+                                                //если убиваем вдовца
+                        if (n->color == 'r')
+                        {                                   //красный вдовец (К0)
+                        #ifdef DELETING_BALANCE
+                        printf("убили красного вдовца\n");
+                        #endif
+                        this->PrevNull(n);
+                        }
+                        else
+                        {                                   //чёрный вдовец  (Ч0)
+                        #ifdef DELETING_BALANCE
+                        printf("убили чёрного вдовца\n");
+                        #endif
+                        }
+                }
+            } */
+
+        }
+
+        void DestroySubTree() {}
+
+        void ShowTree(Node<T> * n, int count = 0)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                printf("|");
+            }
+            printf("[%d]", count);
+            cout << n->data << n->color << endl;
+            count++;
+            if (n->l != 0)
+            {
+                this->ShowTree(n->l, count);
+            }
+            if (n->r != 0)
+            {
+                this->ShowTree(n->r, count);
+            }
+        }
+
+        void PrintTree()
+        {
+            if (this->size == 0)
+            {
+                printf("Tree is empty\n");
+                return;
+            }
+            this->TLevel();
+            int p = 1, levelcount = this->levels;
+            Node<T> *arr[p];
+            arr[0] = this->root;
+            int y = Step(2, levelcount - 1);
+            for (int i = 0; i < y; i++)
+            {
+                printf(" ");
+            }
+            cout << this->root->data << this->root->color << endl;
+            this->Printic(arr, p * 2, levelcount);
+        }
+
+        ~Tree()
+        {
+            if (TREE_CONSTRUCTORS)
+            {
+                printf("Destructed tree (%d)\n", this->size);
+            }
+        }
+
+    private:
+        void TreeLevel(Node<T> * node, int l)
+        {
+            if (node->l != 0)
+            {
+                this->TreeLevel(node->l, l + 1);
+            }
+            if (node->r != 0)
+            {
+                this->TreeLevel(node->r, l + 1);
+            }
+            if ((node->r == 0) && (node->l == 0) && (this->levels < l))
+            {
+                this->levels = l;
+            }
+        }
+
+        void Printic(Node<T> * *arr, int p, int levelcount)
+        {
+            /* for (int i = 0; i < p/2; i++)
+        {
+            if(arr[i] != 0){
+                printf("%d ", arr[i]->data);
+            }else{
+                printf("0 ");
+            }
+            
+        }*/
+
+            if (levelcount == 0)
+            {
+                return;
+            }
+            Node<T> *arrc[p]; //p уже домножено на 2 и == потенц. кол-ву детей
+
+            for (int i = 0; i < p; i++)
+            {
+                arrc[i] = 0;
+            }
+
+            for (int i = 0; i < p / 2; i++)
+            {
+                if (arr[i] != 0)
+                {
+                    if (arr[i]->l != 0)
+                    {
+                        //printf("hello1[%d]\n",i);
+                        arrc[i * 2] = arr[i]->l;
+                        //printf("hello1[%d]\n",arrc[i * 2]->data);
+                    }
+                    else
+                    {
+                        //printf("hello12[%d]\n",i);
+                        arrc[i * 2] = 0;
+                    }
+                    if (arr[i]->r != 0)
+                    {
+                        //printf("hello21[%d]\n",i);
+                        arrc[i * 2 + 1] = arr[i]->r;
+                        //printf("hello1[%d]\n",arrc[i * 2 + 1]->data);
+                    }
+                    else
+                    {
+                        //printf("hello22[%d]\n",i);
+                        arrc[i * 2 + 1] = 0;
+                    }
+                }
+                else
+                {
+                    arrc[i * 2] = 0;
+                    arrc[i * 2 + 1] = 0;
+                }
+            }
+
+            /* for (int i = 0; i < p; i++)
+        {
+            if(arrc[i] != 0){
+                printf("%d ", arrc[i]->data);
+            }else{
+                printf("0[%d]", i);
+            }
+            
+        } */
+
+            /* for (int childs = 0; childs < p; childs++)
+        {
+            if (arr[childs/2] != 0)
+            {
+                printf("hello[%d\n", childs);
+                switch (childs % 2)
+                {
+                case 0:
+                {
+                    if (arr[childs]->l != 0) //ветки узлов
+                    {
+                        for (int i = 0; i < 2 * levelcount / 3; i++) //пробелы между узлами
+                        {
+                            printf("_"); //пробел
+                        }
+                        printf("/");
+                    }
+                    else
+                    {
+                        for (int i = 0; i < 2 * levelcount / 3; i++) //пробелы между узлами
+                        {
+                            printf("_"); //пробел
+                        }
+                        printf(" ");
+                    }
+                }
+                break;
+                case 1:
+                {
+                    if (arr[childs]->r != 0)
+                    {
+                        for (int i = 0; i < 2 * levelcount / 3; i++) //пробелы между узлами
+                        {
+                            printf("_"); //пробел
+                        }
+                        printf("\\");
+                    }
+                    else
+                    {
+                        for (int i = 0; i < 2 * levelcount / 3; i++) //пробелы между узлами
+                        {
+                            printf("_"); //пробел
+                        }
+                        printf(" ");
+                    }
+                }
+                break;
+                }
+            }
+        } */
+
+            printf("\n");
+            for (int i = 0; i < Step(2, levelcount - 1) / 2; i++)
+            {
+                printf(" "); //пробел
+            }
+
+            for (int childs = 0; childs < p; childs++)
+            {
+                if (arrc[childs] != 0)
+                {
+                    cout << arrc[childs]->data << arrc[childs]->color;
+                }
+                else
+                {
+                    printf(" "); //пустое место от символа
+                }
+                for (int i = 0; i < Step(2, levelcount - 1); i++)
+                {
+                    printf(" "); //пробел
+                }
+            }
+            printf("\n");
+            this->Printic(arrc, p * 2, levelcount - 1);
+        }
+
+        void Paste(Node<T> & n, Node<T> * prev)
+        {
+            if (this->now == 0)
+            {
+                this->now = &n;
+                n.color = 'r';
+                this->now->p = prev;
+
+                if (n.data <= this->now->p->data)
+                {
+                    this->now->p->l = &n;
+                }
+                else
+                {
+                    this->now->p->r = &n;
+                }
+                this->now->l = 0;
+                this->now->r = 0;
+                this->size++;
+
+                printf("%d node pushed after %d\n", this->now->data, this->now->p->data);
+            }
+            else if (n.data <= this->now->data)
+            {
+                prev = this->now;
+                this->GoL();
+                this->Paste(n, prev);
+            }
+            else if (n.data > this->now->data)
+            {
+                prev = this->now;
+                this->GoR();
+                this->Paste(n, prev);
+            }
+        }
+
+        void Balance(Node<T> * pasted)
+        {
+            if (pasted == this->root)
+            { //Если вызвали для корня, то просто красим его в чёрный
+                pasted->color = 'b';
+                return;
+            }
+
+            if (pasted->p == this->root)
+            { //Если нет деда, то выход
+#ifdef PASTING_BALANCING
+                printf("Для(%d):Мы у корня, так что балансировать нечего\n", pasted->data);
+#endif
+                return;
+            }
+
+            Node<T> *uncle = this->FindUncle(pasted);
+#ifdef PASTING_BALANCING
+            if (uncle != 0)
+            {
+                cout << pasted->data << " now uncle " << uncle->data << endl;
+                cout << ((pasted->p->color == 'r') && (pasted->color == 'r')) << (uncle != 0) << (uncle->color == 'r') << endl;
+            }
+            else
+            {
+                cout << " UNCLE - ZERO " << endl;
+            }
+#endif
+            if ((pasted->p->color == 'r') && (pasted->color == 'r'))
+            { //если отец красный
+                if (uncle != 0)
+                { //если дядя ЕСТЬ
+                    if (uncle->color == 'r')
+                    { //если дядя КРАСНЫЙ
+                        firstBalance(pasted, uncle);
+                    }
+                    else
+                    { //если дядя ЧЁРНЫЙ
+                        secondBalance(pasted, uncle);
+                    }
+                }
+                else
+                { //если дяди НЕТ
+                    thirdBalance(pasted);
+                }
+            }
+            else
+            {
+#ifdef PASTING_BALANCING
+                printf("Отец и сын разноцветные, баллансировка не нужна\n");
+#endif
+            }
+#ifdef PASTING_BALANCING
+            printf("%d Balanced \n", pasted->data);
+#endif
+            //this->ShowTree(this->root);
+        }
+
+        void firstBalance(Node<T> * n, Node<T> * uncle)
+        {
+#ifdef PASTING_BALANCING
+            printf("Это вставка ситуация 1\n");
+#endif
+            if (n->p->p != this->root)
+            {
+                n->p->p->color = 'r';
+                n->p->p->l->color = 'b'; //меняем цвета деда и его детей
+                n->p->p->r->color = 'b';
+                this->Balance(uncle->p); //рекурсия вверх
+            }
+            else
+            {
+                n->p->p->l->color = 'b'; //меняем цвета деда и его детей
+                n->p->p->r->color = 'b';
+            }
+        }
+
+        void secondBalance(Node<T> * n, Node<T> * uncle)
+        {
+#ifdef PASTING_BALANCING
+            printf("Это вставка ситуация 2\n");
+#endif
+            n = this->OneSide(n, uncle); //с одной ли стороны мы и дядя если нет, то возвращается указатель на отца
+            Node<T> *dad = n->p, *grand = n->p->p;
+            if (dad->l == n)
+            { //Если вставили в левое поддерево, значит родитель тоже левый
+#ifdef PASTING_BALANCING
+                printf("Вставляли в левое поддерево\n");
+#endif
+                if (grand == this->root)
+                { //если дед не сын, а корень
+#ifdef PASTING_BALANCING
+                    printf("Дед корень\n");
+#endif
+                    dad->p = 0;
+                    grand->p = dad;
+                    grand->l = dad->r; //ВРОДЕ НОРМ
+                    dad->r->p = grand;
+                    dad->r = grand;
+                    this->root = dad;
+                }
+                else
+                {
+                    if (grand->p->l == grand)
+                    { //если дед левый сын
+#ifdef PASTING_BALANCING
+                        printf("Дед - левый сын\n");
+#endif
+                        grand->p->l = dad;
+                        dad->p = grand->p;
+                        grand->p = dad;
+                        grand->l = dad->r;
+                        dad->r->p = grand;
+                        dad->r = grand;
+                    }
+                    else
+                    { //если дед правый сын
+#ifdef PASTING_BALANCING
+                        printf("Дед - правый сын\n");
+#endif
+                        grand->p->r = dad;
+                        dad->p = grand->p;
+                        grand->p = dad;
+                        grand->l = dad->r;
+                        dad->r->p = grand;
+                        dad->r = grand;
+                    }
+                }
+            }
+            else
+            { //Если вставили в правое поддерево, значит родитель тоже правый
+#ifdef PASTING_BALANCING
+                printf("Вставляли в правое дерево\n");
+#endif
+                if (grand == this->root)
+                { //если дед не сын, а корень
+#ifdef PASTING_BALANCING
+                    printf("Дед - корень\n");
+#endif
+                    dad->p = 0;
+                    grand->p = dad;
+                    grand->r = dad->l;
+                    dad->l->p = grand;
+                    dad->l = grand;
+                    this->root = dad;
+                }
+                else
+                {
+#ifdef PASTING_BALANCING
+                    printf("%d 2sb\n", (grand->p->l == grand));
+#endif
+                    if (grand->p->l == grand)
+                    { //если дед левый сын
+#ifdef PASTING_BALANCING
+                        printf("Дед - левый сын\n");
+#endif
+                        grand->p->l = dad;
+                        dad->p = grand->p;
+                        grand->p = dad;
+                        grand->r = dad->l;
+                        dad->l->p = grand;
+                        dad->l = grand;
+                    }
+                    else
+                    { //если дед правый сын
+#ifdef PASTING_BALANCING
+                        printf("Дед - правый сын\n");
+#endif
+
+                        grand->p->r = dad;
+                        dad->p = grand->p;
+                        grand->p = dad;
+                        grand->r = dad->l;
+                        dad->l->p = grand;
+                        dad->l = grand;
+                    }
+                }
+            }
+            grand->color = 'r';
+            dad->color = 'b';
+#ifdef SHOW_TREE_IN_BALANCE
+            this->ShowTree(this->root);
+#endif
+        }
+
+        void thirdBalance(Node<T> * n)
+        {
+#ifdef PASTING_BALANCING
+            printf("Это вставка ситуация 3\n");
+#endif
+            n->p->p->color = 'r';
+            n->p->color = 'b';
+            this->ShowTree(this->root);
+            this->Balance(n->p->p);
+        }
+
+        Node<T> *OneSide(Node<T> * n, Node<T> * uncle)
+        {
+            if (((n->p->l == n) && (uncle->p->r == uncle)) || ((n->p->r == n) && (uncle->p->l == uncle)))
+            {
+#ifdef PASTING_BALANCING
+                printf("Расположение удобное\n");
+#endif
+                return n; //если всё нормально расположено ничего не меняем
+            }
+            else
+            {
+#ifdef PASTING_BALANCING
+                printf("Меняем расположение\n");
+#endif
+                Node<T> *dad = n->p, *grand = n->p->p;
+                if (n->p->r == n) //если n справа и дядя справа
+                {
+                    n->p = grand;
+                    n->l = dad;
+                    grand->l = n;
+                    dad->p = n;
+                    dad->r = 0;
+                }
+                else
+                { //если n слева и дядя слева
+                    n->p = grand;
+                    n->r = dad;
+                    grand->r = n;
+                    dad->p = n;
+                    dad->l = 0;
+                }
+                return dad; //после поворота возвращаем указатель на отца
+            }
+        }
+
+        Node<T> *FindUncle(Node<T> * n)
+        {
+            if (n->p->p->r == n->p)
+            { //если отец справа
+                if (n->p->p->l != 0)
+                {
+                    return n->p->p->l;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            else
+            {
+                if (n->p->p->r != 0)
+                {
+                    return n->p->p->r;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+        }
+    };
+
+    int main()
+    {
+        Node<int> v(1), r(2), t(3), s(4), b(5), a(3), rt(3);
+        Tree<int> tr;
+
+        tr.PushTree(r); // 2 1 3 4 5 6
+        tr.PushTree(v);
+        tr.PushTree(t);
+        tr.PushTree(a);
+        tr.PushTree(s);
+        tr.PushTree(b);
+
+        Node<int> v1(5), r1(6), t1(7), s1(8), b1(5), a1(0);
+
+        tr.PushTree(r1); // 5 6 7 8 0
+        tr.PushTree(v1);
+        tr.PushTree(t1);
+        tr.PushTree(a1);
+        tr.PushTree(s1);
+        tr.PushTree(b1);
+
+        printf("Pasting has ended.\n");
+        tr.PrintTree();
+
+        Node<int> *ix = tr.FindNode(8, tr.root);
+        tr.PopTree(ix);
+
+        tr.PrintTree();
+        //tr.ShowTree(tr.root, 0);
+        printf("\ngood bye\n");
+    }
