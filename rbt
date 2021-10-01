@@ -1,11 +1,15 @@
 #include "constructors.cpp"
 //const int CONSTRUCTORS = 0, TREE_CONSTRUCTORS = 0, PASTING_BALANCING = 1, SHOW_TREE_IN_BALANCE = 1, DELETING_BALANCE = 1;
 template <typename T>
+struct Tree;
+
+template <typename T>
 struct Node
 {
-    Node *l = 0;
-    Node *r = 0;
-    Node *p = 0;
+
+    Node<T> *l = 0;
+    Node<T> *r = 0;
+    Node<T> *p = 0;
     T data;
     T *ptr = &data;
     char color = 'b';
@@ -58,11 +62,14 @@ struct Node
             printf("EndDel node (%d)\n", this->data);
         }
     }
+
+    friend class Tree<T>;
 };
 
 template <typename T>
 struct Tree
 {
+    friend class Node<T>;
 
     Node<T> *root = 0;
     Node<T> *now = this->root;
@@ -100,20 +107,31 @@ struct Tree
 
     void PushTree(Node<T> &n)
     {
+        if (printhelp == 1)
+            std::cout << "Pushing" << std::endl;
         if (this->root == 0)
         {
+            if (printhelp == 1)
+                std::cout << "Pushing1" << std::endl;
 
             this->root = &n;
+            if (printhelp == 1)
+                std::cout << &n << std::endl;
             this->now = this->root;
-            this->now->l = 0;
-            this->now->r = 0;
-            this->now->p = 0;
+            if (this->now != 0)
+            {
+                this->now->r = 0;
+                this->now->l = 0;
+                this->now->p = 0;
+            }
+            if (printhelp == 1)
+                std::cout << "Pushing5" << std::endl;
             this->size++;
-            printf("root pushed, size == %d\n", this->size);
+            if (printhelp == 1)
+                printf("root pushed, size == %d\n", this->size);
         }
         else
         {
-            printf("pushing node %d \n", n.data);
             this->now = this->root;
             this->Paste(n, this->root->p);
 #ifdef PASTING_BALANCING
@@ -155,6 +173,58 @@ struct Tree
                 }
                 else
                 {
+                    return 0;
+                }
+            }
+        }
+    }
+
+    Node<mypair<VAL_TYPE, std::KEY_TYPE>> *FindNode(std::KEY_TYPE x, Node<mypair<VAL_TYPE, std::KEY_TYPE>> *n)
+    {
+        if (printhelp == 1)
+            cout << "find warking" << endl;
+        if (n == 0)
+        {
+            if (printhelp == 1)
+                printf("Empty now\n");
+            return 0;
+        }
+        if (printhelp == 1)
+            cout << "find warking with tree" << endl;
+        if (eq(n->data.second, x))
+        {
+            if (printhelp == 1)
+                cout << "нашёл" << x << endl;
+            return n;
+        }
+        else
+        {
+            if (printhelp == 1)
+                std::cout << "enter else" << std::endl;
+            if ((n->l != 0) && (n->data.second >= x))
+            {
+                if (printhelp == 1)
+                    std::cout << "enter el1" << std::endl;
+                if (printhelp == 1)
+                    cout << "ищу слева" << x << n->data.second << endl;
+                n = this->FindNode(x, n->l);
+                return n;
+            }
+            else
+            {
+                if ((n->r != 0) && (n->data.second < x))
+                {
+                    if (printhelp == 1)
+                        std::cout << "enter el2" << std::endl;
+                    if (printhelp == 1)
+                        cout << "ищу справа" << x << n->data.second << endl;
+                    n = this->FindNode(x, n->r);
+                    return n;
+                }
+                else
+                {
+                    if (printhelp == 1)
+                        std::cout << "enter ex" << std::endl;
                     return 0;
                 }
             }
@@ -445,26 +515,33 @@ struct Tree
 
     void Black0(Node<T> *n)
     {
-        if (n->p->l == n)
+        if (n->p != 0)
         {
-            this->Black0Left(n);
+            if (n->p->l == n)
+            {
+                this->Black0Left(n);
+            }
+            else
+            {
+                this->Black0Right(n);
+            }
         }
         else
         {
-            this->Black0Right(n);
+            return;
         }
     }
 
     void Black0Left(Node<T> *n)
     {
-        #ifdef DELETING_BALANCE
+#ifdef DELETING_BALANCE
         printf("Левый случай\n");
 #endif
         Node<T> *dad = n->p, *son, *vnuk;
         Node<T> *min = this->RightFall(dad);
         if (min->color == 'r')
         {
-            #ifdef DELETING_BALANCE
+#ifdef DELETING_BALANCE
             printf("min\n");
 #endif
             n->data = dad->data;
@@ -500,6 +577,163 @@ struct Tree
         }
     }
 
+    void Kill1HightL(Node<T> *dad)
+    {
+        dad->r->color = 'r';
+        if (dad != this->root)
+        {
+            this->Kill1HightL(dad->p);
+        }
+        return;
+    }
+
+    void Kill1HightR(Node<T> *dad)
+    {
+        dad->l->color = 'r';
+        if (dad != this->root)
+        {
+            this->Kill1HightR(dad->p);
+        }
+        return;
+    }
+
+    Node<T> *Findredl(Node<T> *node)
+    { //найдёт самый нижний и левый красный узел
+        if (node->l != 0)
+        {
+            this->Findredl(node->l);
+        }
+        if (node->r != 0)
+        {
+            this->Findredl(node->r);
+        }
+        if (node->color == 'r')
+        {
+            return node;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    Node<T> *Findredr(Node<T> *node)
+    {
+        if (node->l != 0)
+        {
+            this->Findredr(node->r);
+        }
+        if (node->r != 0)
+        {
+            this->Findredr(node->l);
+        }
+        if (node->color == 'r')
+        {
+            return node;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    void RecPrint(Node<T> *red, Node<T> *downred = 0)
+    {
+        if ((red->l == 0) || (red->r == 0))
+        {
+            if (downred == 0)
+            {
+                downred = red;
+            }
+        }
+        else
+        {
+            red->color = 'b';
+            red->l->color = 'r';
+            red->r->color = 'r';
+            this->RecPrint(red->l);
+            this->RecPrint(red->r);
+        }
+        return;
+    }
+
+    bool SeeForRedInTreeRight()
+    {
+        Node<T> *nod = this->Findredr(this->root), *fnod = 0; //найти красный узел
+        if (nod == 0)
+        {
+            return false;
+        }
+        this->RecPrint(nod, fnod);
+#ifdef DELETING_BALANCE
+        this->PrintTree();
+#endif
+        //переместить вниз пока у него не останется детей
+        //удалить сохранив значение в дереве
+    }
+
+    bool SeeForRedInTreeLeft(Node<T> *redone)
+    {
+        Node<T> *nod = this->Findredl(this->root), *fnod = 0; //найти красный узел
+        if (nod == 0)
+        {
+            return false;
+        }
+        this->RecPrint(nod, fnod);
+        redone = fnod;
+//переместить вниз пока у него не останется детей
+#ifdef DELETING_BALANCE
+        this->PrintTree();
+#endif
+
+        //удалить сохранив значение в дереве
+    }
+
+    void UnrealDeadr(Node<T> *fnod, Node<T> *main)
+    { //main тот который мы удаляем из дерева в итоге
+    }
+
+    void UnrealDeadl(Node<T> *fnod, Node<T> *main)
+    { //main тот который мы удаляем из дерева в итоге
+        T prev, next;
+        Node<T> *one, *two;
+        one = fnod->p;
+        two = fnod;
+
+        next = one->data;
+        one->data = two->data;
+        prev = next;
+        while (1)
+        {
+            if ((one->l != 0) && (one->r != 0))
+            { //короче лучше через функции наверное
+                while ((one->l != 0) && (one->r != 0))
+                {
+                    one = one->p; //вертикальный ход
+                    Obmen(one, next, prev);
+                }
+            }
+            else
+            {
+                Node<T> *dad = one;
+                while (!((one->l != 0) && (one->r != 0)))
+                {
+                    one = one->l; //левый ход
+                    Obmen(one, next, prev);
+                }
+            }
+        }
+        PrevNull(fnod);
+        //дописать перемещение значений по дереву для обоих случаев
+    }
+
+    void Obmen(Node<T> *one, T next, T prev)
+    {
+        next = one->data;
+        one->data = prev;
+        prev = next;
+    }
+
     void B0LBlackdad(Node<T> *n, Node<T> *dad)
     { //чёрный отец для левого случая
         Node<T> *son = dad->r;
@@ -514,7 +748,17 @@ struct Tree
             }
             else
             {
-                //Hurdest case left
+                //Здесь не нужно проверять есть ли другой внук у dad потому что если бы он был
+                //то он был бы красный и сработал бы min в начале
+                Node<T> *red;
+                if (!this->SeeForRedInTreeLeft(red))
+                { //если не нашли во всём дереве красного элемента
+                    this->Kill1HightL(dad);
+                }
+                else
+                {
+                    this->UnrealDeadl(red, 0);
+                }
             }
         }
         else
@@ -522,7 +766,7 @@ struct Tree
             Node<T> *ud;
             if ((son->l->l != 0) || (son->l->r != 0))
             {
-                #ifdef DELETING_BALANCE
+#ifdef DELETING_BALANCE
                 printf("У правого сына есть внуки\n");
 #endif
                 if (son->l->l != 0)
@@ -543,11 +787,7 @@ struct Tree
                 dad->data = son->l->data;
                 son->l->data = ud->data;
                 this->PrevNull(ud);
-return;
-
-
-
-
+                return;
             }
             if ((son->r->l != 0) || (son->r->r != 0))
             {
@@ -651,10 +891,10 @@ return;
 #ifdef DELETING_BALANCE
             printf("Левый сын - красный\n");
 #endif
-                Node<T> *ud;
+            Node<T> *ud;
             if ((son->r->r != 0) || (son->r->l != 0))
             {
-                #ifdef DELETING_BALANCE
+#ifdef DELETING_BALANCE
                 printf("У правого сына есть внуки\n");
 #endif
                 if (son->r->r != 0)
@@ -675,11 +915,7 @@ return;
                 dad->data = son->r->data;
                 son->r->data = ud->data;
                 this->PrevNull(ud);
-return;
-
-
-
-
+                return;
             }
             if ((son->l->r != 0) || (son->l->l != 0))
             {
@@ -864,14 +1100,20 @@ return;
                 }
             }
         }
+        return;
     }
 
-    Node<T> PopTree(Node<T> *n) //типо удoляем del, но по факту удоляем n
+    Node<T> *PopTree(Node<T> *n) //типо удoляем del, но по факту удоляем n
     {
+        if (n == 0)
+        {
+            return 0;
+        }
         Node<T> res = *n;
         Node<T> *del = n; //запоминаем указатель удоляемого элемента
+
         this->DelBalance(n, del);
-        return res;
+        return &res;
 
         /* 
             if (n->l != 0)
@@ -954,7 +1196,8 @@ return;
     {
         if (this->size == 0)
         {
-            printf("Tree is empty\n");
+            if (printhelp == 1)
+                printf("Tree is empty\n");
             return;
         }
         this->TLevel();
@@ -1115,7 +1358,8 @@ private:
             this->now->r = 0;
             this->size++;
 
-            printf("%d node pushed after %d\n", this->now->data, this->now->p->data);
+            if (printhelp == 1)
+                printf("%d node pushed after %d\n", this->now->data, this->now->p->data);
         }
         else if (n.data <= this->now->data)
         {
@@ -1151,12 +1395,12 @@ private:
 #ifdef PASTING_BALANCING
         if (uncle != 0)
         {
-            cout << pasted->data << " now uncle " << uncle->data << endl;
-            cout << ((pasted->p->color == 'r') && (pasted->color == 'r')) << (uncle != 0) << (uncle->color == 'r') << endl;
+            std::cout << pasted->data << " now uncle " << uncle->data << std::endl;
+            std::cout << ((pasted->p->color == 'r') && (pasted->color == 'r')) << (uncle != 0) << (uncle->color == 'r') << std::endl;
         }
         else
         {
-            cout << " UNCLE - ZERO " << endl;
+            std::cout << " UNCLE - ZERO " << endl;
         }
 #endif
         if ((pasted->p->color == 'r') && (pasted->color == 'r'))
@@ -1403,39 +1647,211 @@ private:
     }
 };
 
-int main()
+    void Dictionary(Tree<mypair<VAL_TYPE, KEY_TYPE>> & tr);
+
+int save(Tree<mypair<VAL_TYPE, KEY_TYPE>> tr, std::string file)
 {
-    Node<int> v(1), r(2), t(13), s(4), b(15), a(33), rt(23);
-    Tree<int> tr;
+    Node<mypair<VAL_TYPE, KEY_TYPE>> *n;
+    FILE *fl = fopen(file.c_str(), "w");
+    if (fl == NULL)
+    {
+        printf("ERROR: Couldn't save file\n");
+        return 0;
+    }
 
-    tr.PushTree(r); // 2 1 13 33 4 15
-    tr.PushTree(v);
-    tr.PushTree(t);
-    tr.PushTree(a);
-    tr.PushTree(s);
+    for (int i = 0; i < tr.size; i++)
+    {
+        n = tr.PopTree(tr.root);
+        if (n == 0)
+        {
+            return 1;
+        }
+        fprintf(fl, "+ %s %d\n", n->data.second.c_str(), n->data.first);
+    }
+    fclose(fl);
+    printf("saved\n");
+    return 1;
+}
 
+int lo = 0;
 
+int load(Tree<mypair<VAL_TYPE, KEY_TYPE>> tr, std::string file)
+{
+    for (int i = 0; i < tr.size; i++)
+    {
+        tr.PopTree(tr.root);
+    }
+    FILE* fl = fopen(file.c_str(), "r");
+    if (fl == 0)
+    {
+        cout << "ERROR: File doesn't exist" << endl;
+        fclose(fl);
+        return 0;
+    }
+    //save(tr, ".emergensysave.tree");
+    Dictionary(tr, fl, 0);
+    fclose(fl);
+    return 1;
+}
 
-    printf("Pasting has ended.\n");
-tr.PrintTree();
-  /*   Node<int> *sem = tr.FindNode(0, tr.root);
-    tr.PopTree(sem);
-    tr.PrintTree();
-    sem = tr.FindNode(1, tr.root);
-    tr.PopTree(sem);
-    tr.PrintTree();
-    sem = tr.FindNode(4, tr.root);
-    tr.PopTree(sem);
-    tr.PrintTree();
-    sem = tr.FindNode(2, tr.root);
-    tr.PopTree(sem);
-    tr.PrintTree(); */
-    
-/* 
-    Node<int> *sem = tr.FindNode(1, tr.root);
-tr.PopTree(sem);
-    tr.PrintTree(); */
+void Dictionary(Tree<mypair<VAL_TYPE, KEY_TYPE>> &tr, FILE* fl, int stdinput = 1)
+{
+    using namespace std;
 
+    string cmd, word;
+    VAL_TYPE val;
+    mypair<VAL_TYPE, string> p;
 
-    printf("\ngood bye\n");
+    if (printhelp == 1)
+        cout << "Enter the command" << endl;
+
+        if(stdinput != 1){
+            fscanf(fl,"%s", cmd);
+        }
+    while (cin >> cmd)
+    {
+        if (printhelp == 1)
+            cout << cmd << endl;
+
+        /* if((cmd != "+")&&(cmd != "-")&&(cmd != "!")){
+        printf("incorrect command\n");
+        exit(0);
+        } */
+        if (cmd == "+")
+        {
+            if(stdinput != 1){
+                fscanf(fl,"%s", word);
+            }else{
+                cin >> word;
+            }
+            
+            if (printhelp == 1)
+                cout << word << endl;
+
+            if(stdinput != 1){
+                fscanf(fl,"%s", val);
+            }else{
+                cin >> val;
+            }
+            
+            if (printhelp == 1)
+                cout << val << endl;
+
+            if (!countletter(word))
+            {
+                printf("No letters incorrect key\n");
+                exit(0);
+            }
+            p.first = val;
+            p.second = word;
+            Node<mypair<VAL_TYPE, KEY_TYPE>> *u = new Node<mypair<VAL_TYPE, KEY_TYPE>>(p);
+            Node<mypair<VAL_TYPE, KEY_TYPE>> *n = 0;
+            n = tr.FindNode(word, tr.root);
+            if (n == 0)
+            {
+                tr.PushTree(*u);
+                printf("OK\n");
+            }
+            else
+            {
+                printf("Exist\n");
+            }
+        }
+        else if (cmd == "-")
+        {
+            if(stdinput != 1){
+                fscanf(fl,"%s", word);
+            }else{
+                cin >> word;
+            }
+            p.second = word;
+            Node<mypair<VAL_TYPE, KEY_TYPE>> *n;
+            n = tr.FindNode(word, tr.root);
+            if (n == 0)
+            {
+                printf("NoSuchWord\n");
+            }
+            else
+            {
+                tr.PopTree(n);
+                printf("OK\n");
+            }
+        }
+        else if (cmd == "!")
+        {
+            if(stdinput != 1){
+                fscanf(fl,"%s", word);
+            }else{
+                cin >> word;
+            }
+            int res = 1;
+            if ((word == "Save") || (word == "save"))
+            {
+                std::string file;
+                if (printhelp == 1)
+                    cout << "Enter the filename" << endl;
+                 if(stdinput != 1){
+                fscanf(fl,"%s", file);
+            }else{
+                cin >> file;
+            }
+                res = save(tr, file);
+            }
+            else if ((word == "Load") || (word == "load"))
+            {
+                std::string file;
+                if (printhelp == 1)
+                    cout << "Enter the filename" << endl;
+                if(stdinput != 1){
+                fscanf(fl,"%s", file);
+            }else{
+                cin >> file;
+            }
+                res = load(tr, file);
+            }
+            if (res == 1)
+            {
+                printf("OK\n");
+            }
+            else
+            {
+                //error code
+            }
+        }
+        else
+        {
+            if (printhelp == 1)
+                cout << "Enter to keysearch" << endl;
+            Node<mypair<VAL_TYPE, KEY_TYPE>> nd;
+            Node<mypair<VAL_TYPE, KEY_TYPE>> *nref = &nd;
+            nref = tr.FindNode(cmd, tr.root);
+            if (nref != 0)
+            {
+                cout << "OK:" << nref->data.first << endl;
+            }
+            else
+            {
+                printf("NoSuchWord\n");
+            }
+        }
+    }
+    return;
+}
+
+int main(int c, char *chr[])
+{
+    if (c > 1)
+    {
+        if (chr[1] == string("1"))
+        {
+            printhelp = 1;
+        }
+        cout << "hp " << printhelp << endl;
+    }
+    else
+    {
+        //printf("%d\n", c);
+    }
+    Tree<mypair<VAL_TYPE, KEY_TYPE>> tr;
+    Dictionary(tr);
 }
