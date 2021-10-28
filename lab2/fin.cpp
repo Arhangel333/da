@@ -97,10 +97,6 @@ void operator=(mypair<T, T2> p2){
     return;
 }
 
-/* ostream& operator<<(mypair<T, T2> p){
-    cout<<p.first<<" "<<p.second;
-    return cout;
-} */
 };
 
 
@@ -109,8 +105,8 @@ Node<mypair<VAL_TYPE, std::KEY_TYPE>> *root1;
 int countletter(std::string s){
     int l = 0;
     int left = 64, right = 123;
-if(printhelp ==1)
-printf("size = %d\n", s.size());
+/* if(printhelp ==1)
+printf("size = %d\n", s.size()); */
     for(int i = 0; i< s.size(); i++){
         if(printhelp ==1)
             cout<<"_"<<((int)s[i])<<"_"<<endl;
@@ -164,11 +160,11 @@ struct Node
     Node()
     {
         this->ptr = new T;
-        if (CONSTRUCTORS)
+        /* if (CONSTRUCTORS)
         {
 
             printf("EmptyConstructed node (%d)\n", this->data);
-        }
+        } */
     }
     Node(Node &n)
     {
@@ -178,33 +174,33 @@ struct Node
         this->r = n.r;
         this->p = n.p;
         this->color = n.color;
-        if (CONSTRUCTORS)
+        /* if (CONSTRUCTORS)
         {
             printf("CopyConstructed node (%d)\n", this->data);
-        }
+        } */
     }
     Node(T t)
     {
         this->ptr = new T;
         this->data = t;
-        if (CONSTRUCTORS)
+        /* if (CONSTRUCTORS)
         {
             printf("Constructed node (%d)\n", this->data);
-        }
+        } */
     }
 
     ~Node()
     {
-        if (CONSTRUCTORS)
+        /* if (CONSTRUCTORS)
         {
             cout << p;
             printf("Deleted node (%d)\n", this->data);
-        }
+        } */
         delete this->ptr;
-        if (CONSTRUCTORS)
+        /* if (CONSTRUCTORS)
         {
             printf("EndDel node (%d)\n", this->data);
-        }
+        } */
     }
 
     friend class Tree<T>;
@@ -222,10 +218,10 @@ struct Tree
 
     Tree()
     {
-        if (TREE_CONSTRUCTORS)
+        /* if (TREE_CONSTRUCTORS)
         {
             printf("Constructed tree (%d)\n", this->size);
-        }
+        } */
     }
     Tree(Tree &tr)
     {
@@ -1346,8 +1342,8 @@ private:
             this->now->r = 0;
             this->size++;
 
-            if (printhelp == 1)
-                printf("%d node pushed after %d\n", this->now->data, this->now->p->data);
+            /* if (printhelp == 1)
+                printf("%d node pushed after %d\n", this->now->data, this->now->p->data); */
         }
         else if (n.data <= this->now->data)
         {
@@ -1600,7 +1596,7 @@ int save(Tree<mypair<VAL_TYPE, KEY_TYPE>> tr, std::string file)
         {
             return 1;
         }
-        fprintf(fl, "+ %s %d\n", n->data.second.c_str(), n->data.first);
+        fprintf(fl, "+ %s %lld\n", n->data.second.c_str(), n->data.first);
     }
     fclose(fl);
     return 1;
@@ -1613,7 +1609,7 @@ void Creation(Tree<mypair<VAL_TYPE, KEY_TYPE>> &tr, FILE * fl){
     int val;
     std::string word;
     while(!feof(fl)){
-    fscanf(fl,"%c %s %d\n", &str, &str1, &val);
+    fscanf(fl,"%c %s %d\n", &str, str1, &val);
     
     word = str1;
     mypair<VAL_TYPE, KEY_TYPE> p;
@@ -1627,19 +1623,22 @@ void Creation(Tree<mypair<VAL_TYPE, KEY_TYPE>> &tr, FILE * fl){
 
 int load(Tree<mypair<VAL_TYPE, KEY_TYPE>> &tr, std::string file)
 {
+
+    FILE * fl = fopen(file.c_str(), "r");
+    if (fl == 0)
+    {
+        cout << "ERROR: File doesn't exist" << endl;
+        //fclose(fl);
+        return 0;
+    }
+    
     for (int i = 0; i < tr.size; i++)
     {
         tr.PopTree(tr.root);
     }
     Tree<mypair<VAL_TYPE, KEY_TYPE>> tr1;
     tr = tr1;
-    FILE * fl = fopen(file.c_str(), "r");
-    if (fl == 0)
-    {
-        cout << "ERROR: File doesn't exist" << endl;
-        fclose(fl);
-        return 0;
-    }
+    
     if (printhelp == 1)
         std::cout << "LOUDDICTIONARY"<<" "<<file << std::endl;
     Creation(tr, fl);
