@@ -27,7 +27,7 @@ std::string generateRandomString(size_t length) {
     return result;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     // Инициализация генератора случайных чисел
     srand(static_cast<unsigned int>(time(0)));
 
@@ -37,14 +37,17 @@ int main() {
         std::cerr << "Ошибка открытия файла!" << std::endl;
         return 1;
     }
-
-    // Количество пар "ключ-значение"
     int numPairs = 20;
+    if (argc > 1)
+    {
+        numPairs = atoi(argv[1]);
+        //std::cout<<numPairs<<std::endl;
+    }
 
     // Генерация и запись пар в файл
     for (int i = 0; i < numPairs; ++i) {
         std::string licensePlate = generateLicensePlate();
-        size_t valueLength = 10 + rand() % 2048; // случайная длина от 10 до 2048 символов
+        size_t valueLength = rand() % 2048; // случайная длина от 0 до 2048 символов
         std::string value = generateRandomString(valueLength);
 
         outFile << licensePlate << '\t' << value << '\n';
@@ -53,7 +56,7 @@ int main() {
     // Закрываем файл
     outFile.close();
 
-    std::cout << "Файл input.txt успешно создан!" << std::endl;
+    std::cout << "testmaker.cpp: Файл input.txt успешно создан!" << std::endl;
 
     return 0;
 }
